@@ -22,7 +22,7 @@ namespace testTask
         private readonly int blockLength;
         private readonly Dictionary<int, String> result = new Dictionary<int, string>();
         private readonly Thread mainThread;
-
+        private  Thread printThread;
 
 
         private volatile bool stopRead = false;
@@ -94,11 +94,12 @@ namespace testTask
             {
                 queue.AddToQueue(new Task(null, THREAD_EXIT_FLAG));
             }
-            outputQueue.AddToQueue(new Task(null, THREAD_EXIT_FLAG));
             foreach (var t in threads)
             {
                 t.Join();
             }
+            outputQueue.AddToQueue(new Task(null, THREAD_EXIT_FLAG));
+            printThread.Join();
         }
 
         private void StartThreads()
@@ -109,9 +110,9 @@ namespace testTask
                 threads.Add(t);
                 t.Start();
             }
-            Thread printThread = new Thread(() => Print(blockCount));
+            printThread = new Thread(() => Print(blockCount));
             printThread.Start();
-            threads.Add(printThread);
+           // threads.Add(printThread);
         }
 
         private void Print(long blockCount)
@@ -149,7 +150,6 @@ namespace testTask
         {
             for (Task t = queue.Take(); t.number != THREAD_EXIT_FLAG; t = queue.Take())
             {
-               
                 string hash = hasher.Hash(t.buffer.raw, t.buffer.bytesCount);
                 outputQueue.AddToQueue(new Task(hash, t.number));
                 bufferQueue.AddToQueue(t.buffer);
